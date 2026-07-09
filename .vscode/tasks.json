@@ -39,6 +39,18 @@
 				"<postgres_admin_password>"
 			],
 			"group": "test"
+		},
+		{
+			"label": "Migrate As Owner Role",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				".\\scripts\\migrate-as-owner.ps1"
+			],
+			"group": "build"
 		}
 	]
 }
