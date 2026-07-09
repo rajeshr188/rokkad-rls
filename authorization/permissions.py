@@ -7,6 +7,10 @@ NOTES_VIEW = "notes.view"
 NOTES_CREATE = "notes.create"
 NOTES_UPDATE = "notes.update"
 NOTES_DELETE = "notes.delete"
+PARTY_VIEW = "party.view"
+PARTY_CREATE = "party.create"
+PARTY_UPDATE = "party.update"
+PARTY_DELETE = "party.delete"
 INVITATION_VIEW = "invitation.view"
 INVITATION_MANAGE = "invitation.manage"
 BILLING_VIEW = "billing.view"
@@ -24,6 +28,10 @@ ROLE_PERMISSIONS = {
         NOTES_CREATE,
         NOTES_UPDATE,
         NOTES_DELETE,
+        PARTY_VIEW,
+        PARTY_CREATE,
+        PARTY_UPDATE,
+        PARTY_DELETE,
         INVITATION_VIEW,
         INVITATION_MANAGE,
         BILLING_VIEW,
@@ -38,6 +46,10 @@ ROLE_PERMISSIONS = {
         NOTES_CREATE,
         NOTES_UPDATE,
         NOTES_DELETE,
+        PARTY_VIEW,
+        PARTY_CREATE,
+        PARTY_UPDATE,
+        PARTY_DELETE,
         INVITATION_VIEW,
         INVITATION_MANAGE,
         BILLING_VIEW,
@@ -50,6 +62,9 @@ ROLE_PERMISSIONS = {
         NOTES_VIEW,
         NOTES_CREATE,
         NOTES_UPDATE,
+        PARTY_VIEW,
+        PARTY_CREATE,
+        PARTY_UPDATE,
         INVITATION_VIEW,
         BILLING_VIEW,
     },
@@ -59,10 +74,14 @@ ROLE_PERMISSIONS = {
         NOTES_VIEW,
         NOTES_CREATE,
         NOTES_UPDATE,
+        PARTY_VIEW,
+        PARTY_CREATE,
+        PARTY_UPDATE,
     },
     "viewer": {
         WORKSPACE_ACCESS,
         WORKSPACE_VIEW_DASHBOARD,
         NOTES_VIEW,
+        PARTY_VIEW,
     },
 }

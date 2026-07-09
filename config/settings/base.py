@@ -82,6 +82,7 @@ LOCAL_APPS = [
     'authorization',
     'billing',
     'notes',
+    'party',
     'platform_admin',
 ]
 
