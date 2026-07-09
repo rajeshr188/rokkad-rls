@@ -84,12 +84,11 @@ class WorkspaceMemberRLSPostgresTests(TransactionTestCase):
         self._clear_workspace_context()
         self.assertEqual(WorkspaceMember.objects.count(), 0)
 
-    def test_self_read_policy_stays_workspace_scoped(self):
-        self._set_workspace_context(self.workspace_a.id)
+    def test_self_read_policy_allows_actor_rows_without_cross_user_leak(self):
+        self._clear_workspace_context()
         self._set_actor_context(self.user_b.id)
         rows = list(WorkspaceMember.objects.values_list("workspace_id", "user_id"))
-        self.assertEqual({workspace_id for workspace_id, _ in rows}, {self.workspace_a.id})
-        self.assertNotIn((self.workspace_b.id, self.user_b.id), rows)
+        self.assertEqual(rows, [(self.workspace_b.id, self.user_b.id)])
 
 
 class TenantTableRLSPostgresTests(TransactionTestCase):

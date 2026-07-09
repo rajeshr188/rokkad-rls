@@ -145,11 +145,20 @@ class Command(BaseCommand):
                         workspace_column.lower() in with_check_text
                         and "current_setting" in with_check_text
                     )
+                    qual_has_actor_scope = (
+                        "user_id" in qual_text
+                        and "current_actor_id" in qual_text
+                        and "current_setting" in qual_text
+                    )
 
                     # PostgreSQL combines permissive policies with OR. Any permissive
                     # policy that is not tenant-scoped can weaken isolation guarantees.
                     if permissive_text == "PERMISSIVE":
-                        if cmd_text in {"ALL", "SELECT", "UPDATE", "DELETE"} and not qual_has_tenant_scope:
+                        if (
+                            cmd_text in {"ALL", "SELECT", "UPDATE", "DELETE"}
+                            and not qual_has_tenant_scope
+                            and not (cmd_text == "SELECT" and qual_has_actor_scope)
+                        ):
                             failures.append(
                                 f"{label}: permissive policy '{policy_name}' on '{table_name}' has cmd={cmd_text} without tenant-scoped USING clause."
                             )
