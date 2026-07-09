@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Invitations{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Invitations - {{ workspace.name }}</h1>
+
+{% if can_manage_invitations %}
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h2 class="h5">Send Invitation</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input class="form-control" type="email" name="email" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Role</label>
+                <select class="form-select" name="role">
+                    {% for value, label in role_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Send Invitation</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="h5">Existing Invitations</h2>
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Expires</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invitation in invitations %}
+                <tr>
+                    <td>{{ invitation.email }}</td>
+                    <td>{{ invitation.role }}</td>
+                    <td>{{ invitation.status }}</td>
+                    <td>{{ invitation.expires_at|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        {% if can_manage_invitations and invitation.status == "pending" %}
+                        <div class="d-flex gap-2">
+                            <form method="post" action="{% url 'workspaces:workspace_invitations:page-resend' workspace_slug=workspace.slug invitation_id=invitation.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Resend</button>
+                            </form>
+                            <form method="post" action="{% url 'workspaces:workspace_invitations:page-revoke' workspace_slug=workspace.slug invitation_id=invitation.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Revoke</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <span class="text-muted small">No actions</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5">No invitations yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

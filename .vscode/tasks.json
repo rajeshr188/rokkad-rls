@@ -1,0 +1,44 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Django Dev Server",
+			"type": "shell",
+			"command": ".\\.venv\\Scripts\\python.exe",
+			"args": [
+				"manage.py",
+				"runserver"
+			],
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "Run Dev RLS Checks",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				".\\scripts\\run-dev-rls-checks.ps1"
+			],
+			"group": "test"
+		},
+		{
+			"label": "Apply Dev DB Role Hardening",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				".\\scripts\\apply-dev-role-hardening.ps1",
+				"-AdminUser",
+				"<postgres_admin_user>",
+				"-AdminPassword",
+				"<postgres_admin_password>"
+			],
+			"group": "test"
+		}
+	]
+}

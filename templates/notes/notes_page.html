@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Notes{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Notes - {{ workspace.name }}</h1>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+    <h2 class="h5">Create Note</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input class="form-control" type="text" name="title" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Body</label>
+            <textarea class="form-control" name="body" rows="4"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create</button>
+    </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+    <h2 class="h5">Existing Notes</h2>
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Body</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for note in notes %}
+            <tr>
+                <td>{{ note.title }}</td>
+                <td>{{ note.body|truncatechars:120 }}</td>
+                <td>
+                    <form method="post" action="{% url 'workspaces:notes:page-delete' workspace_slug=workspace.slug note_id=note.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No notes yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

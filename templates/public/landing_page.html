@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}RLS Rokkad | Workspace ERP Foundation{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <span class="badge text-bg-primary mb-3">Shared-schema SaaS ERP</span>
+            <h1 class="display-5 fw-semibold mb-3">Workspace ERP infrastructure with PostgreSQL RLS built in.</h1>
+            <p class="lead text-muted">Launch faster with multi-workspace tenancy, invitations, plan gating, and a secure Django foundation that already understands isolation.</p>
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                {% if can_open_app %}
+                <a class="btn btn-primary btn-lg" href="{% url 'workspace-home' %}">Open App</a>
+                <a class="btn btn-outline-primary btn-lg" href="{% url 'workspace-create' %}">Create Workspace</a>
+                {% elif is_authenticated %}
+                <a class="btn btn-primary btn-lg" href="{% url 'account_email' %}">Verify Email</a>
+                <a class="btn btn-outline-primary btn-lg" href="{% url 'pricing-page' %}">See Pricing</a>
+                {% else %}
+                <a class="btn btn-primary btn-lg" href="{% url 'account_signup' %}">Start Free</a>
+                <a class="btn btn-outline-primary btn-lg" href="{% url 'pricing-page' %}">See Pricing</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 bg-dark text-white">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-3">Included in the foundation</h2>
+                    <ul class="mb-0 ps-3">
+                        <li class="mb-2">PostgreSQL Row Level Security tenancy</li>
+                        <li class="mb-2">Workspace roles and invitations</li>
+                        <li class="mb-2">Subscription-backed feature gates</li>
+                        <li class="mb-2">Public/app/workspace navigation layers</li>
+                        <li>Health checks, rate limits, and CI baseline</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-4">
+    <div class="row g-3">
+        {% for plan in plans %}
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="h5">{{ plan.name }}</h3>
+                    <p class="text-muted">{{ plan.description }}</p>
+                    <div class="display-6 fw-semibold mb-3">{% if plan.monthly_price %}${{ plan.monthly_price }}<small class="fs-6 text-muted">/mo</small>{% else %}Free{% endif %}</div>
+                    <a class="btn btn-outline-primary" href="{% url 'pricing-page' %}">View details</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

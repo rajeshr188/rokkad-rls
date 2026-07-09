@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: rls_rokkad
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d rls_rokkad"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      COVERAGE_FAIL_UNDER: "85"
+      DB_ENGINE: postgres
+      DB_NAME: rls_rokkad
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      DJANGO_SECRET_KEY: ci-not-for-production
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DJANGO_DEBUG: "false"
+      RATE_LIMIT_ENABLED: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django checks
+        run: |
+          python manage.py check
+          python manage.py check --deploy
+
+      - name: Apply migrations
+        run: |
+          python manage.py migrate --noinput
+
+      - name: RLS policy generation gate
+        run: |
+          python manage.py makerlspolicies --check
+
+      - name: RLS safety gate (strict)
+        run: |
+          python manage.py check_rls
+
+      - name: Smoke tests
+        run: |
+          python manage.py test core.tests.HealthEndpointTests workspaces.tests.WorkspaceCreatePageTests billing.tests.BillingProductSurfaceTests
+
+      - name: Run tests with coverage gate
+        run: |
+          coverage run --source='.' manage.py test
+          coverage report --fail-under=$COVERAGE_FAIL_UNDER
+          coverage xml

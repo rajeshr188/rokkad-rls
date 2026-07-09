@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}My Workspaces{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">My Workspaces</h1>
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+    <p>Select a workspace to open the dashboard UI.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Slug</th>
+                <th>Open</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for workspace in workspaces %}
+            <tr>
+                <td>{{ workspace.name }}</td>
+                <td>{{ workspace.slug }}</td>
+                <td>
+                    <a href="{% url 'workspaces:dashboard-page' workspace_slug=workspace.slug %}">Dashboard</a>
+                    |
+                    <a href="{% url 'workspaces:memberships:page' workspace_slug=workspace.slug %}">Members</a>
+                    |
+                    <a href="{% url 'workspaces:notes:page' workspace_slug=workspace.slug %}">Notes</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No workspaces found for your account.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

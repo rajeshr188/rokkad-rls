@@ -1,0 +1,20 @@
+{% extends "account/base.html" %}
+
+{% block head_title %}Confirm Email{% endblock %}
+
+{% block inner_content %}
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+        <h1 class="h4 mb-3">Confirm Email</h1>
+        {% if confirmation %}
+            <p class="text-muted">Please confirm that <strong>{{ confirmation.email_address.email }}</strong> belongs to this account.</p>
+            <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary w-100">Confirm Email</button>
+            </form>
+        {% else %}
+            <p class="text-muted mb-0">This confirmation link is invalid or has already been used.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

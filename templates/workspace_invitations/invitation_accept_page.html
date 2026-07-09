@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Accept Invitation{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">Accept Invitation</h1>
+                {% if invitation %}
+                    <p class="text-muted">You were invited to join <strong>{{ invitation.workspace.name }}</strong> as <strong>{{ invitation.role }}</strong>.</p>
+                    <p class="text-muted">Invitation for <strong>{{ invitation.email }}</strong>.</p>
+                    <form method="post" action="{% url 'workspace_invitations:accept-page' token=token %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary w-100">Accept Invitation</button>
+                    </form>
+                {% else %}
+                    <p class="text-muted mb-0">This invitation link is invalid or no longer available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "account/base.html" %}
+
+{% block head_title %}Email Addresses{% endblock %}
+
+{% block inner_content %}
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+        <h1 class="h4 mb-3">Email Addresses</h1>
+        {% if user.emailaddress_set.all %}
+            <div class="list-group mb-3">
+                {% for emailaddress in user.emailaddress_set.all %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ emailaddress.email }}</strong>
+                            {% if emailaddress.primary %}<span class="badge bg-primary ms-2">Primary</span>{% endif %}
+                            {% if emailaddress.verified %}<span class="badge bg-success ms-1">Verified</span>{% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'account_email' %}">
+            {% csrf_token %}
+            {% include "account/_form_fields.html" with form=form %}
+            <button type="submit" class="btn btn-primary w-100">Add Email</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

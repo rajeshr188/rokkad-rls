@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Members{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Members - {{ workspace.name }}</h1>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+    <h2 class="h5">Add Member</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input class="form-control" type="text" name="username" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Role</label>
+            <select class="form-select" name="role">
+                {% for value, label in role_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add Member</button>
+    </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+    <h2 class="h5">Current Members</h2>
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Change Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr>
+                <td>{{ member.user.username }}</td>
+                <td>{{ member.role }}</td>
+                <td>{{ member.status }}</td>
+                <td>
+                    <form method="post" action="{% url 'workspaces:memberships:page-role-update' workspace_slug=workspace.slug member_id=member.id %}" class="actions">
+                        {% csrf_token %}
+                        <select class="form-select form-select-sm" name="role">
+                            {% for value, label in role_choices %}
+                            <option value="{{ value }}" {% if value == member.role %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

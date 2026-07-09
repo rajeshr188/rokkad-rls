@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Workspace Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">{{ workspace.name }}</h1>
+{% if show_onboarding_prompt %}
+<div class="alert alert-info" role="alert">
+    Onboarding is ready. Invite your team to start collaborating.
+    <a class="alert-link" href="{% url 'workspaces:workspace_invitations:page' workspace_slug=workspace.slug %}">Send invitations</a>
+    <form method="post" action="{% url 'workspaces:complete-onboarding' workspace_slug=workspace.slug %}" class="mt-2">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-primary">Mark Onboarding Complete</button>
+    </form>
+</div>
+{% endif %}
+<div class="card shadow-sm">
+    <div class="card-body">
+    <p><strong>Workspace Slug:</strong> {{ workspace.slug }}</p>
+    <p class="mb-0"><strong>RLS Context Applied:</strong> {{ rls_context_applied }}</p>
+    </div>
+</div>
+{% endblock %}
