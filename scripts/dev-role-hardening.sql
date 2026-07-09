@@ -41,7 +41,8 @@ DECLARE
         'memberships_workspacemember',
         'billing_subscription',
         'workspace_invitations_workspaceinvitation',
-        'common_auditlog'
+        'common_auditlog',
+        'party_party'
     ];
 BEGIN
     FOREACH t IN ARRAY tenant_tables LOOP
@@ -83,6 +84,7 @@ WHERE c.relkind = 'r'
       'memberships_workspacemember',
       'billing_subscription',
       'workspace_invitations_workspaceinvitation',
-      'common_auditlog'
+            'common_auditlog',
+            'party_party'
   )
 ORDER BY c.relname;
