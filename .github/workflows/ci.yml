@@ -26,10 +26,14 @@ jobs:
       COVERAGE_FAIL_UNDER: "85"
       DB_ENGINE: postgres
       DB_NAME: rls_rokkad
-      DB_USER: postgres
+      DB_USER: rls_rokkad_user
       DB_PASSWORD: postgres
       DB_HOST: 127.0.0.1
       DB_PORT: "5432"
+      MIGRATION_DB_USER: rls_rokkad_migration_owner
+      MIGRATION_DB_PASSWORD: postgres
+      POSTGRES_ADMIN_USER: postgres
+      POSTGRES_ADMIN_PASSWORD: postgres
       DJANGO_SECRET_KEY: ci-not-for-production
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
       DJANGO_DEBUG: "false"
@@ -54,9 +58,54 @@ jobs:
           python manage.py check
           python manage.py check --deploy
 
+      - name: Prepare PostgreSQL roles for RLS
+        env:
+          PGPASSWORD: ${{ env.POSTGRES_ADMIN_PASSWORD }}
+        run: |
+          psql -h "$DB_HOST" -p "$DB_PORT" -U "$POSTGRES_ADMIN_USER" -d "$DB_NAME" <<'SQL'
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'rls_rokkad_migration_owner') THEN
+              CREATE ROLE rls_rokkad_migration_owner LOGIN PASSWORD 'postgres';
+            END IF;
+
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'rls_rokkad_user') THEN
+              CREATE ROLE rls_rokkad_user LOGIN PASSWORD 'postgres';
+            END IF;
+
+            ALTER ROLE rls_rokkad_user NOBYPASSRLS;
+            GRANT rls_rokkad_migration_owner TO rls_rokkad_user;
+
+            GRANT USAGE, CREATE ON SCHEMA public TO rls_rokkad_migration_owner;
+            GRANT USAGE ON SCHEMA public TO rls_rokkad_user;
+
+            ALTER DEFAULT PRIVILEGES FOR ROLE rls_rokkad_migration_owner IN SCHEMA public
+              GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO rls_rokkad_user;
+            ALTER DEFAULT PRIVILEGES FOR ROLE rls_rokkad_migration_owner IN SCHEMA public
+              GRANT USAGE, SELECT ON SEQUENCES TO rls_rokkad_user;
+          END
+          $$;
+          SQL
+
       - name: Apply migrations
+        env:
+          DB_USER: ${{ env.MIGRATION_DB_USER }}
+          DB_PASSWORD: ${{ env.MIGRATION_DB_PASSWORD }}
         run: |
           python manage.py migrate --noinput
+
+      - name: Ensure runtime grants on existing objects
+        env:
+          PGPASSWORD: ${{ env.POSTGRES_ADMIN_PASSWORD }}
+        run: |
+          psql -h "$DB_HOST" -p "$DB_PORT" -U "$POSTGRES_ADMIN_USER" -d "$DB_NAME" <<'SQL'
+          DO $$
+          BEGIN
+            EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO rls_rokkad_user';
+            EXECUTE 'GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO rls_rokkad_user';
+          END
+          $$;
+          SQL
 
       - name: RLS policy generation gate
         run: |
