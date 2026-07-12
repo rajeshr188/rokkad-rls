@@ -126,20 +126,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite').lower()
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3'
-        if DB_ENGINE == 'sqlite'
-        else 'django.db.backends.postgresql',
-        'NAME': str(BASE_DIR / 'db.sqlite3')
-        if DB_ENGINE == 'sqlite'
-        else os.getenv('DB_NAME', 'rls_rokkad'),
-        'USER': '' if DB_ENGINE == 'sqlite' else os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': '' if DB_ENGINE == 'sqlite' else os.getenv('DB_PASSWORD', 'postgres'),
-        'HOST': '' if DB_ENGINE == 'sqlite' else os.getenv('DB_HOST', '127.0.0.1'),
-        'PORT': '' if DB_ENGINE == 'sqlite' else os.getenv('DB_PORT', '5432'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'rls_rokkad'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 

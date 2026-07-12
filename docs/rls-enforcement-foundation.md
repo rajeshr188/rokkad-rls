@@ -2,6 +2,46 @@
 
 This document defines the reusable, fail-closed RLS foundation for tenant-scoped Django apps.
 
+## Purpose
+
+Describe the baseline contract and safety controls required for RLS-backed tenant isolation.
+
+## Prerequisites
+
+- Familiarity with tenant model conventions in this repository.
+- PostgreSQL environment available for policy validation.
+- Read access to [rls-multitenancy-guide.md](rls-multitenancy-guide.md) for runtime behavior context.
+
+## Workflow
+
+Recommended adoption order:
+
+1. Enforce tenant model contract.
+2. Apply runtime context handling.
+3. Generate and apply RLS migrations.
+4. Run strict validation gates before merge/deploy.
+
+## Validation
+
+Primary gates described in this guide:
+
+- `python manage.py makerlspolicies --check`
+- `python manage.py check_rls`
+
+## Troubleshooting
+
+Use these sections when debugging rollout issues:
+
+- Generic policy pattern and null-safe setting cast
+- Deployment gate checks (`check_rls`)
+- Database role safety and rollout plan
+
+## Related Guides
+
+- [tenant-scoped-models-rls-guide.md](tenant-scoped-models-rls-guide.md)
+- [rls-phased-implementation-plan.md](rls-phased-implementation-plan.md)
+- [production-deployment-guide.md](production-deployment-guide.md)
+
 ## 1. Scope
 
 This foundation covers tenant data isolation only:
@@ -67,7 +107,42 @@ Default in this project is session-level (`RLS_CONTEXT_LOCAL=false`) with explic
 - clears all context keys first
 - sets actor/workspace for current request
 
+`ATOMIC_REQUESTS` guidance:
+
+- Keep `ATOMIC_REQUESTS=false` for the default database in this architecture.
+- Reason: request middleware executes outside the per-view transaction wrapper, so enabling `ATOMIC_REQUESTS` does not make middleware-applied context transaction-local by itself.
+- Prefer explicit `transaction.atomic()` service boundaries for flows that require local context semantics.
+- Re-evaluate only if transaction-pooling requirements force a full transaction-local propagation strategy across all tenant paths.
+
 This avoids stale pooled-connection context leakage and keeps fail-closed behavior when workspace is missing.
+
+### Connection Pooling Mode and Context Propagation Contract
+
+Supported pooling modes:
+
+- direct PostgreSQL connections
+- session-style pooling where request-start context clear/set semantics are preserved
+
+Conditionally supported pooling mode:
+
+- transaction pooling, only when tenant data paths run in explicit `transaction.atomic()` blocks and context is applied with local scope inside those transactions
+
+Unsupported posture:
+
+- any deployment where DB context lifetime is ambiguous and request/service flows cannot guarantee context set before tenant ORM access
+
+Context propagation contract:
+
+1. tenant identity source is server-side route + auth context, never payload `workspace_id`
+2. clear all RLS context keys at request start
+3. set actor context for authenticated requests
+4. set workspace context only after workspace resolution/authorization
+5. for non-request flows (jobs/commands/webhooks), set workspace/actor context explicitly before tenant queries
+6. fail closed when workspace context is absent or invalid
+
+Operational requirement:
+
+- production runbooks and environment config must explicitly state the pooling mode and verify it matches this contract
 
 ## 4. Generic Policy Pattern
 
@@ -134,6 +209,8 @@ Role safety checks:
 
 - runtime role must not have `BYPASSRLS`
 - runtime role should not own tenant tables
+- runtime role must not be superuser
+- runtime role must not inherit/escalate to migration-owner role
 
 Use in CI and deploy gates.
 
@@ -141,6 +218,23 @@ Recommended command gates:
 
 - `python manage.py makerlspolicies --check` (fails if any tenant model lacks RLS migration coverage)
 - `python manage.py check_rls` (strict role/policy/table safety validation)
+- `python manage.py check_rls --strict-privileges` (also fails when runtime role lacks required tenant-table DML grants)
+
+Recommended SQL verification gates (staging/production):
+
+- runtime role is not superuser:
+
+  ```sql
+  SELECT rolname, rolsuper
+  FROM pg_roles
+  WHERE rolname = current_user;
+  ```
+
+- runtime role is not a member of migration-owner role:
+
+  ```sql
+  SELECT pg_has_role(current_user, 'rls_migration_owner', 'MEMBER') AS can_escalate_to_migration_owner;
+  ```
 
 ## 7. Database Role Safety
 
@@ -151,6 +245,8 @@ Recommended role split:
   - runs migrations
 - runtime app role:
   - no `BYPASSRLS`
+  - no superuser
+  - no role membership that allows `SET ROLE` to migration-owner role
   - not owner of tenant tables
   - only required DML grants
 

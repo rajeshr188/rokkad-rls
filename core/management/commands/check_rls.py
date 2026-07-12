@@ -9,11 +9,51 @@ from core.db.tenant_registry import iter_tenant_model_specs
 class Command(BaseCommand):
     help = "Validate PostgreSQL RLS coverage for all registered tenant models."
 
+    @staticmethod
+    def _missing_dml_privileges(*, select_ok: bool, insert_ok: bool, update_ok: bool, delete_ok: bool) -> list[str]:
+        missing_privileges: list[str] = []
+        if not select_ok:
+            missing_privileges.append("SELECT")
+        if not insert_ok:
+            missing_privileges.append("INSERT")
+        if not update_ok:
+            missing_privileges.append("UPDATE")
+        if not delete_ok:
+            missing_privileges.append("DELETE")
+        return missing_privileges
+
+    @staticmethod
+    def _record_privilege_findings(
+        *,
+        label: str,
+        table_name: str,
+        missing_privileges: list[str],
+        strict_privileges: bool,
+        failures: list[str],
+        warnings: list[str],
+    ) -> None:
+        if not missing_privileges:
+            return
+
+        privilege_message = (
+            f"{label}: runtime role is missing DML privileges "
+            f"({', '.join(missing_privileges)}) on '{table_name}'."
+        )
+        if strict_privileges:
+            failures.append(privilege_message)
+        else:
+            warnings.append(privilege_message)
+
     def add_arguments(self, parser):
         parser.add_argument(
             "--allow-owned-tables",
             action="store_true",
             help="Do not fail when current runtime role owns tenant tables.",
+        )
+        parser.add_argument(
+            "--strict-privileges",
+            action="store_true",
+            help="Fail when runtime role is missing required DML privileges on any tenant table.",
         )
 
     def handle(self, *args, **options):
@@ -189,10 +229,20 @@ class Command(BaseCommand):
                     [table_name, table_name, table_name, table_name],
                 )
                 select_ok, insert_ok, update_ok, delete_ok = cursor.fetchone()
-                if not (select_ok and insert_ok and update_ok and delete_ok):
-                    warnings.append(
-                        f"{label}: runtime role is missing one or more DML privileges on '{table_name}'."
-                    )
+                missing_privileges = self._missing_dml_privileges(
+                    select_ok=select_ok,
+                    insert_ok=insert_ok,
+                    update_ok=update_ok,
+                    delete_ok=delete_ok,
+                )
+                self._record_privilege_findings(
+                    label=label,
+                    table_name=table_name,
+                    missing_privileges=missing_privileges,
+                    strict_privileges=options["strict_privileges"],
+                    failures=failures,
+                    warnings=warnings,
+                )
 
         for warning in warnings:
             self.stdout.write(self.style.WARNING(f"WARNING: {warning}"))

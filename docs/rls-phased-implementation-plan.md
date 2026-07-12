@@ -3,6 +3,48 @@
 Current status: in progress (Phase 1, Phase 2, Phase 3 local/dev, and Phase 5 development scope are completed)
 Date: 2026-07-09
 
+## Purpose
+
+Track phased rollout progress for RLS hardening and provide an auditable execution plan for development, staging, and production.
+
+## Prerequisites
+
+- Read [rls-enforcement-foundation.md](rls-enforcement-foundation.md) for baseline controls.
+- Read [tenant-scoped-models-rls-guide.md](tenant-scoped-models-rls-guide.md) for model-level implementation rules.
+- PostgreSQL environment available for role/policy validation.
+
+## Workflow
+
+Use this plan in the following order:
+
+1. Review plan status snapshot and current environment note.
+2. Execute phase actions and satisfy each phase exit criteria.
+3. Run validation gates and update evidence logs.
+4. Record operational decisions and rollout notes.
+
+## Validation
+
+Primary command gates referenced by this plan:
+
+- `python manage.py makerlspolicies --check`
+- `python manage.py check_rls`
+- `powershell -ExecutionPolicy Bypass -File .\scripts\run-dev-rls-checks.ps1 -IncludeStrictCheck`
+
+## Troubleshooting
+
+If strict checks fail unexpectedly:
+
+- Verify runtime role ownership and `BYPASSRLS` status first (Phase 3 checks).
+- Re-run local bundled verification script and inspect failing step output.
+- Confirm workspace context and policy coverage from the foundation guide.
+
+## Related Guides
+
+- [rls-enforcement-foundation.md](rls-enforcement-foundation.md)
+- [rls-multitenancy-guide.md](rls-multitenancy-guide.md)
+- [production-deployment-guide.md](production-deployment-guide.md)
+- [production-operations-runbook.md](production-operations-runbook.md)
+
 Current environment note:
 
 - Project is in development stage only (no production environment yet).

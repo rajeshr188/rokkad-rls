@@ -1,48 +1,67 @@
 # Documentation Index
 
-This folder contains the baseline documentation for the Django SaaS ERP boilerplate with PostgreSQL Row Level Security (RLS) and agent-assisted development.
+This folder contains architecture, implementation, operations, and RLS guidance for this Django SaaS ERP project.
 
-## Core Docs
+## Start Here By Role
 
-- `saas-erp-architecture-plan.md`
-  Full architecture blueprint, data model plan, RLS design, app boundaries, URL hierarchy, security checklist, and roadmap.
+- Developer
+  - [development-environment-setup-guide.md](development-environment-setup-guide.md)
+  - [implementation-phases.md](implementation-phases.md)
 
-- `implementation-phases.md`
-  Execution plan by phase with goals, deliverables, tests, and acceptance criteria.
+- DevOps/SRE
+  - [production-deployment-guide.md](production-deployment-guide.md)
+  - [production-operations-runbook.md](production-operations-runbook.md)
 
-- `llm-agent-playbook.md`
-  LLM and agent operating model, guardrails, prompt contracts, evaluation strategy, and observability.
+- Backend/Data Modeler
+  - [tenant-scoped-models-rls-guide.md](tenant-scoped-models-rls-guide.md)
+  - [rls-enforcement-foundation.md](rls-enforcement-foundation.md)
 
-- `saas-product-audit.md`
-  Productization audit covering missing commercial, onboarding, operational, and public SaaS surfaces.
+- Architecture/Security Reviewer
+  - [decisions/ADR-0001-tenancy-and-rls.md](decisions/ADR-0001-tenancy-and-rls.md)
+  - [saas-erp-architecture-plan.md](saas-erp-architecture-plan.md)
+  - [rls-multitenancy-guide.md](rls-multitenancy-guide.md)
 
-- `phase-11-14-roadmap.md`
-  Post-foundation roadmap for public product surface, billing UX, checkout/onboarding, and production operations.
+- AI/Agent Contributor
+  - [llm-agent-playbook.md](llm-agent-playbook.md)
+  - [agent-memory.md](agent-memory.md)
 
-- `production-operations-runbook.md`
-  Deployment, monitoring, backup/restore, support operations, and CI quality gate runbook.
+## Documentation By Goal
 
-- `development-environment-setup-guide.md`
-  Local development setup for Windows/macOS/Linux, environment variables, migrations, and troubleshooting.
+- Understand platform architecture
+  - [saas-erp-architecture-plan.md](saas-erp-architecture-plan.md)
+  - [decisions/ADR-0001-tenancy-and-rls.md](decisions/ADR-0001-tenancy-and-rls.md)
 
-- `production-deployment-guide.md`
-  Production deployment checklist, secure environment settings, rollout, validation, and rollback guidance.
+- Execute delivery roadmap
+  - [implementation-phases.md](implementation-phases.md)
+  - [phase-11-14-roadmap.md](phase-11-14-roadmap.md)
+  - [saas-product-audit.md](saas-product-audit.md)
+  - [platform-admin-implementation-plan.md](platform-admin-implementation-plan.md)
 
-- `tenant-scoped-models-rls-guide.md`
-  Patterns for designing tenant-scoped models, adding RLS migrations, and writing isolation tests.
+- Build and validate RLS-safe tenant features
+  - [tenant-scoped-models-rls-guide.md](tenant-scoped-models-rls-guide.md)
+  - [rls-enforcement-foundation.md](rls-enforcement-foundation.md)
+  - [rls-phased-implementation-plan.md](rls-phased-implementation-plan.md)
+  - [rls-multitenancy-guide.md](rls-multitenancy-guide.md)
 
-- `rls-multitenancy-guide.md`
-  Deep dive into how PostgreSQL RLS is used to enforce shared-schema multitenancy.
+- Deploy and run in production
+  - [production-deployment-guide.md](production-deployment-guide.md)
+  - [production-operations-runbook.md](production-operations-runbook.md)
 
-- `decisions/ADR-0001-tenancy-and-rls.md`
-  Architecture Decision Record for shared-schema multitenancy with PostgreSQL RLS.
+## Recommended Reading Paths
 
-## How to Use
+- New engineer onboarding path
 
-1. Read the ADR first to understand the core platform decision.
-2. Use the architecture plan to implement foundational apps.
-3. Follow the implementation phases to execute in sequence.
-4. Apply the LLM-agent playbook for any AI or agent workflows.
+1. [development-environment-setup-guide.md](development-environment-setup-guide.md)
+2. [decisions/ADR-0001-tenancy-and-rls.md](decisions/ADR-0001-tenancy-and-rls.md)
+3. [saas-erp-architecture-plan.md](saas-erp-architecture-plan.md)
+4. [implementation-phases.md](implementation-phases.md)
+
+- RLS deep-dive path
+
+1. [rls-enforcement-foundation.md](rls-enforcement-foundation.md)
+2. [tenant-scoped-models-rls-guide.md](tenant-scoped-models-rls-guide.md)
+3. [rls-multitenancy-guide.md](rls-multitenancy-guide.md)
+4. [rls-phased-implementation-plan.md](rls-phased-implementation-plan.md)
 
 ## Ownership
 

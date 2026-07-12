@@ -78,9 +78,12 @@ Recommended verification queries:
 
 ```sql
 -- Runtime role must not bypass RLS.
-SELECT rolname, rolbypassrls
+SELECT rolname, rolbypassrls, rolsuper
 FROM pg_roles
 WHERE rolname IN ('rls_migration_owner', 'rls_app_runtime');
+
+-- Runtime role must not be able to escalate to migration owner via role membership.
+SELECT pg_has_role('rls_app_runtime', 'rls_migration_owner', 'MEMBER') AS runtime_can_escalate_to_migration_owner;
 
 -- Runtime role should not own tenant tables.
 SELECT n.nspname AS schema_name, c.relname AS table_name, pg_get_userbyid(c.relowner) AS owner
@@ -103,11 +106,16 @@ Run these checks in staging/production before finalizing deploy. Replace role na
 
 ```sql
 -- A) Runtime role must exist and must not bypass RLS.
-SELECT rolname, rolcanlogin, rolbypassrls
+SELECT rolname, rolcanlogin, rolbypassrls, rolsuper
 FROM pg_roles
 WHERE rolname = 'rls_app_runtime';
 
--- Expected: one row with rolcanlogin=true and rolbypassrls=false.
+-- Expected: one row with rolcanlogin=true, rolbypassrls=false, rolsuper=false.
+
+-- A2) Runtime role must not inherit migration-owner privileges.
+SELECT pg_has_role('rls_app_runtime', 'rls_migration_owner', 'MEMBER') AS runtime_can_escalate_to_migration_owner;
+
+-- Expected: runtime_can_escalate_to_migration_owner=false.
 
 -- B) Runtime role must not own tenant tables.
 SELECT
@@ -183,6 +191,7 @@ Expected:
 - `check_rls` exits successfully without `--allow-owned-tables`
 - zero runtime role ownership findings
 - no BYPASSRLS finding for runtime role
+- runtime role is not superuser and cannot escalate to migration-owner role
 
 Security hardening (recommended):
 
@@ -215,6 +224,28 @@ BILLING_RAZORPAY_KEY_SECRET=<key-secret>
 BILLING_RAZORPAY_PLAN_LOOKUP={"starter":"plan_x","growth":"plan_y"}
 BILLING_WEBHOOK_SECRET_RAZORPAY=<webhook-secret>
 ```
+
+## 3.1 Connection Pooling and Context Propagation Requirements
+
+Declare and verify pooling mode before go-live:
+
+- direct PostgreSQL connections, or
+- session-style pooling that preserves request-start context clear/set semantics
+
+If using transaction pooling, require all tenant data paths to run with explicit transaction boundaries and local context application inside `transaction.atomic()` paths.
+
+`ATOMIC_REQUESTS` posture:
+
+- Keep Django `ATOMIC_REQUESTS` disabled by default.
+- Do not enable it as a substitute for explicit tenant-context propagation.
+- Use explicit `transaction.atomic()` in service paths where transaction-local RLS context is required.
+
+Deployment checks:
+
+1. document chosen pooling mode in environment runbook
+2. verify middleware request-start context clearing remains enabled
+3. verify strict `check_rls` passes with runtime role credentials
+4. verify tenant webhook/async flows set context explicitly before ORM access
 
 ## 4. Deployment Steps
 
@@ -269,7 +300,7 @@ curl -f https://<host>/healthz/
 
 - `manage.py check`
 - `manage.py check --deploy`
-- `manage.py check_rls`
+- `manage.py check_rls --strict-privileges`
 - smoke tests
 - full test suite with coverage gate
 

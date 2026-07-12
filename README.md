@@ -121,15 +121,17 @@ This command applies [scripts/dev-role-hardening.sql](scripts/dev-role-hardening
 - Security/Platform: [RLS Enforcement Foundation](docs/rls-enforcement-foundation.md)
 - Architecture/Security Reviewer: [RLS Multitenancy Guide](docs/rls-multitenancy-guide.md), [Architecture Plan](docs/saas-erp-architecture-plan.md), and [ADR-0001](docs/decisions/ADR-0001-tenancy-and-rls.md)
 
-- Architecture plan: `docs/saas-erp-architecture-plan.md`
-- Implementation roadmap: `docs/implementation-phases.md`
-- Development setup guide: `docs/development-environment-setup-guide.md`
-- Production deployment guide: `docs/production-deployment-guide.md`
-- Tenant-scoped models guide: `docs/tenant-scoped-models-rls-guide.md`
-- RLS enforcement foundation: `docs/rls-enforcement-foundation.md`
-- RLS multitenancy guide: `docs/rls-multitenancy-guide.md`
-- Production operations runbook: `docs/production-operations-runbook.md`
-- LLM and agent playbook: `docs/llm-agent-playbook.md`
-- Architecture decision record: `docs/decisions/ADR-0001-tenancy-and-rls.md`
-- Docs index: `docs/README.md`
-- Agent contributor guide: `AGENTS.md`
+## Full Documentation Map
+
+- Docs index: [docs/README.md](docs/README.md)
+- Architecture plan: [docs/saas-erp-architecture-plan.md](docs/saas-erp-architecture-plan.md)
+- Implementation roadmap: [docs/implementation-phases.md](docs/implementation-phases.md)
+- Development setup guide: [docs/development-environment-setup-guide.md](docs/development-environment-setup-guide.md)
+- Production deployment guide: [docs/production-deployment-guide.md](docs/production-deployment-guide.md)
+- Tenant-scoped models guide: [docs/tenant-scoped-models-rls-guide.md](docs/tenant-scoped-models-rls-guide.md)
+- RLS enforcement foundation: [docs/rls-enforcement-foundation.md](docs/rls-enforcement-foundation.md)
+- RLS multitenancy guide: [docs/rls-multitenancy-guide.md](docs/rls-multitenancy-guide.md)
+- Production operations runbook: [docs/production-operations-runbook.md](docs/production-operations-runbook.md)
+- LLM and agent playbook: [docs/llm-agent-playbook.md](docs/llm-agent-playbook.md)
+- Architecture decision record: [docs/decisions/ADR-0001-tenancy-and-rls.md](docs/decisions/ADR-0001-tenancy-and-rls.md)
+- Agent contributor guide: [AGENTS.md](AGENTS.md)

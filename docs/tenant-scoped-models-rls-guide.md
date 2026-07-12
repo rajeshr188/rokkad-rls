@@ -2,7 +2,26 @@
 
 This guide explains how to design tenant-scoped models that obey PostgreSQL RLS and preserve workspace isolation.
 
-## 1. Core Rules
+## Purpose
+
+Define practical model, migration, service, and test patterns that keep tenant data isolated by workspace.
+
+## Prerequisites
+
+- Read [rls-enforcement-foundation.md](rls-enforcement-foundation.md).
+- Active PostgreSQL-backed development environment.
+- Familiarity with service-layer design in this project.
+
+## Workflow
+
+Use this sequence when adding tenant-scoped features:
+
+1. Apply core model rules and inheritance pattern.
+2. Generate/apply RLS migration coverage.
+3. Implement service-layer writes and safe query paths.
+4. Add isolation tests and run validation gates.
+
+## Core Rules
 
 - Every tenant-owned table must include `workspace_id`.
 - Every tenant-owned table must have an RLS policy migration.
@@ -12,7 +31,7 @@ This guide explains how to design tenant-scoped models that obey PostgreSQL RLS 
   - workspace
   - validated payload
 
-## 2. Model Design Pattern
+## Model Design Pattern
 
 Preferred pattern: inherit from `TenantModel` (or `TenantScopedModel` when `created_by` tracking is needed).
 
@@ -47,7 +66,7 @@ Exception policy:
 - Do not add new marker-only tenant models (`tenant_rls_required` without `TenantModel` inheritance).
 - Current allowed marker-only concrete exception is `common.AuditLog`.
 
-## 3. Migration Pattern For RLS
+## Migration Pattern For RLS
 
 After creating initial model migration, add RLS migration using `tenant_rls_sql`.
 
@@ -79,7 +98,7 @@ Automation option:
 
 This command scans registered tenant models and generates missing RLS migrations using the reusable `EnableRLS` operation.
 
-## 4. Service-Layer Pattern
+## Service-Layer Pattern
 
 Always use service functions to create/update tenant data.
 
@@ -89,13 +108,13 @@ Service expectations:
 - enforce workspace-scoped feature gates
 - log sensitive actions (`AuditLog`)
 
-## 5. Query Safety Pattern
+## Query Safety Pattern
 
 - Resolve active workspace from middleware (`request.active_workspace`).
 - Ensure DB workspace context is set for PostgreSQL before tenant table access.
 - Avoid global queryset access to tenant tables without workspace/actor context.
 
-## 6. Testing Pattern
+## Validation
 
 For tenant model tests:
 
@@ -113,7 +132,9 @@ Recommended CI/deploy gate:
 
 The command verifies table existence, workspace column/index, RLS+FORCE RLS status, and tenant isolation policy shape (`USING` + `WITH CHECK`).
 
-## 7. Common Mistakes
+## Troubleshooting
+
+Common mistakes:
 
 - Forgetting `workspace_id` on new model.
 - Adding model but skipping RLS migration.
@@ -121,7 +142,7 @@ The command verifies table existence, workspace column/index, RLS+FORCE RLS stat
 - Relying on template/UI hiding without backend checks.
 - Introducing new marker-only tenant models instead of inheriting `TenantModel`.
 
-## 8. Review Checklist For PRs
+## Review Checklist For PRs
 
 - Does table include `workspace`?
 - Is there an RLS migration for the table?
@@ -130,7 +151,7 @@ The command verifies table existence, workspace column/index, RLS+FORCE RLS stat
 - Are audit logs added for sensitive operations?
 - Does `check_rls` pass?
 
-## 9. Standard Workflow For New Tenant Apps
+## Standard Workflow For New Tenant Apps
 
 ```powershell
 .\.venv\Scripts\python.exe manage.py makemigrations
@@ -139,10 +160,15 @@ The command verifies table existence, workspace column/index, RLS+FORCE RLS stat
 .\.venv\Scripts\python.exe manage.py check_rls
 ```
 
-## 10. Role Safety Baseline
+## Role Safety Baseline
 
 - runtime role must not have `BYPASSRLS`
 - runtime role should not own tenant tables
 - migrations should run with a dedicated migration/owner role
 
 See `docs/rls-enforcement-foundation.md` for the full foundation and phased rollout plan.
+
+## Related Guides
+
+- [rls-multitenancy-guide.md](rls-multitenancy-guide.md)
+- [rls-phased-implementation-plan.md](rls-phased-implementation-plan.md)

@@ -1,3 +1,5 @@
+from contextlib import ExitStack, contextmanager
+
 from django.conf import settings
 from django.db import connection
 
@@ -81,6 +83,56 @@ def apply_invitation_token_context(token: str, *, local=None) -> bool:
 
 def clear_invitation_token_context(*, local=None) -> bool:
     return _reset_rls_setting(setting_name="app.current_invitation_token", local=local)
+
+
+@contextmanager
+def workspace_context(workspace_id, *, local=None, clear_on_exit=True):
+    """Temporarily apply workspace RLS context for non-request flows."""
+
+    applied = apply_workspace_context(workspace_id, local=local)
+    try:
+        yield applied
+    finally:
+        if applied and clear_on_exit:
+            clear_workspace_context(local=local)
+
+
+@contextmanager
+def actor_context(actor_id, *, local=None, clear_on_exit=True):
+    """Temporarily apply actor RLS context for non-request flows."""
+
+    applied = apply_actor_context(actor_id, local=local)
+    try:
+        yield applied
+    finally:
+        if applied and clear_on_exit:
+            clear_actor_context(local=local)
+
+
+@contextmanager
+def invitation_token_context(token: str, *, local=None, clear_on_exit=True):
+    """Temporarily apply invitation-token RLS context for non-request flows."""
+
+    applied = apply_invitation_token_context(token, local=local)
+    try:
+        yield applied
+    finally:
+        if applied and clear_on_exit:
+            clear_invitation_token_context(local=local)
+
+
+@contextmanager
+def tenant_context(*, workspace_id=None, actor_id=None, invitation_token=None, local=None):
+    """Apply any combination of tenant RLS context keys within one scope."""
+
+    with ExitStack() as stack:
+        if actor_id is not None:
+            stack.enter_context(actor_context(actor_id, local=local))
+        if workspace_id is not None:
+            stack.enter_context(workspace_context(workspace_id, local=local))
+        if invitation_token:
+            stack.enter_context(invitation_token_context(invitation_token, local=local))
+        yield
 
 
 def tenant_rls_sql(

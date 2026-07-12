@@ -174,6 +174,66 @@ class RLSSettingLocalBehaviorTests(TestCase):
 		self.assertEqual(mock_cursor.execute.call_args.args[0], "RESET app.current_workspace_id")
 
 
+class RLSContextManagerTests(TestCase):
+	@patch("core.db.rls.apply_workspace_context", return_value=True)
+	@patch("core.db.rls.clear_workspace_context", return_value=True)
+	def test_workspace_context_applies_and_clears(self, mock_clear, mock_apply):
+		with rls.workspace_context("33333333-3333-3333-3333-333333333333") as applied:
+			self.assertTrue(applied)
+
+		mock_apply.assert_called_once_with("33333333-3333-3333-3333-333333333333", local=None)
+		mock_clear.assert_called_once_with(local=None)
+
+	@patch("core.db.rls.apply_workspace_context", return_value=True)
+	@patch("core.db.rls.clear_workspace_context", return_value=True)
+	def test_workspace_context_clears_on_exception(self, mock_clear, mock_apply):
+		with self.assertRaisesRegex(RuntimeError, "boom"):
+			with rls.workspace_context("44444444-4444-4444-4444-444444444444"):
+				raise RuntimeError("boom")
+
+		mock_apply.assert_called_once_with("44444444-4444-4444-4444-444444444444", local=None)
+		mock_clear.assert_called_once_with(local=None)
+
+	@patch("core.db.rls.apply_workspace_context", return_value=True)
+	@patch("core.db.rls.clear_workspace_context", return_value=True)
+	def test_workspace_context_does_not_clear_when_not_applied(self, mock_clear, mock_apply):
+		mock_apply.return_value = False
+
+		with rls.workspace_context(None) as applied:
+			self.assertFalse(applied)
+
+		mock_clear.assert_not_called()
+
+	@patch("core.db.rls.apply_actor_context", return_value=True)
+	@patch("core.db.rls.clear_actor_context", return_value=True)
+	@patch("core.db.rls.apply_workspace_context", return_value=True)
+	@patch("core.db.rls.clear_workspace_context", return_value=True)
+	@patch("core.db.rls.apply_invitation_token_context", return_value=True)
+	@patch("core.db.rls.clear_invitation_token_context", return_value=True)
+	def test_tenant_context_applies_and_clears_all(
+		self,
+		mock_clear_invitation,
+		mock_apply_invitation,
+		mock_clear_workspace,
+		mock_apply_workspace,
+		mock_clear_actor,
+		mock_apply_actor,
+	):
+		with rls.tenant_context(
+			actor_id=10,
+			workspace_id="55555555-5555-5555-5555-555555555555",
+			invitation_token="invite-token",
+		):
+			pass
+
+		mock_apply_actor.assert_called_once_with(10, local=None)
+		mock_apply_workspace.assert_called_once_with("55555555-5555-5555-5555-555555555555", local=None)
+		mock_apply_invitation.assert_called_once_with("invite-token", local=None)
+		mock_clear_invitation.assert_called_once_with(local=None)
+		mock_clear_workspace.assert_called_once_with(local=None)
+		mock_clear_actor.assert_called_once_with(local=None)
+
+
 class HealthEndpointTests(TestCase):
 	def test_healthz_returns_ok(self):
 		response = self.client.get(reverse("healthz"))

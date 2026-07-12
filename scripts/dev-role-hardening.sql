@@ -32,20 +32,23 @@ BEGIN
     EXECUTE format('GRANT %I TO %I', :'migration_role', :'runtime_role');
 END $$;
 
--- Transfer ownership of known tenant tables to migration role.
+-- Transfer ownership of tenant tables to migration role.
+-- Discovery rule: public base tables that have workspace_id and RLS enabled.
 DO $$
 DECLARE
     t text;
-    tenant_tables text[] := ARRAY[
-        'notes_note',
-        'memberships_workspacemember',
-        'billing_subscription',
-        'workspace_invitations_workspaceinvitation',
-        'common_auditlog',
-        'party_party'
-    ];
 BEGIN
-    FOREACH t IN ARRAY tenant_tables LOOP
+    FOR t IN
+        SELECT c.relname
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        JOIN pg_attribute a ON a.attrelid = c.oid
+        WHERE c.relkind = 'r'
+          AND n.nspname = 'public'
+          AND c.relrowsecurity
+          AND a.attname = 'workspace_id'
+          AND NOT a.attisdropped
+    LOOP
         EXECUTE format('ALTER TABLE IF EXISTS public.%I OWNER TO %I', t, :'migration_role');
     END LOOP;
 END $$;
@@ -77,14 +80,10 @@ ORDER BY rolname;
 SELECT c.relname AS table_name, pg_get_userbyid(c.relowner) AS owner
 FROM pg_class c
 JOIN pg_namespace n ON n.oid = c.relnamespace
+JOIN pg_attribute a ON a.attrelid = c.oid
 WHERE c.relkind = 'r'
   AND n.nspname = 'public'
-  AND c.relname IN (
-      'notes_note',
-      'memberships_workspacemember',
-      'billing_subscription',
-      'workspace_invitations_workspaceinvitation',
-            'common_auditlog',
-            'party_party'
-  )
+    AND c.relrowsecurity
+    AND a.attname = 'workspace_id'
+    AND NOT a.attisdropped
 ORDER BY c.relname;

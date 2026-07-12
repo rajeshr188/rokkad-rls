@@ -55,6 +55,7 @@ And for tenant writes:
 - Include migration notes when RLS policies are added or modified
 - Include security test coverage for tenant isolation
 - Include clear rollback notes for billing or auth changes
+- If tenant guardrails, workflows, or validation commands changed, update `docs/agent-memory.md` in the same PR
 
 ## RLS Foundation Commands
 
@@ -69,3 +70,4 @@ Reference docs:
 
 - `docs/rls-enforcement-foundation.md`
 - `docs/rls-phased-implementation-plan.md`
+- `docs/agent-memory.md`

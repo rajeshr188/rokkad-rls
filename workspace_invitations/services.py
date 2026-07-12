@@ -8,7 +8,7 @@ from django.utils import timezone
 from authorization.permissions import INVITATION_MANAGE, INVITATION_VIEW
 from authorization.policies import require_permission
 from common.audit import log_action
-from core.db import apply_invitation_token_context, apply_workspace_context
+from core.db import apply_workspace_context, invitation_token_context, tenant_context
 from memberships.models import WorkspaceMember
 from workspace_invitations.models import WorkspaceInvitation
 
@@ -144,56 +144,56 @@ def accept_invitation(*, actor, token: str):
     if not actor or not actor.is_authenticated:
         raise PermissionDenied("Authentication is required.")
 
-    apply_invitation_token_context(token)
-    invitation = WorkspaceInvitation.objects.select_related("workspace").filter(token=token).first()
-    if invitation is None:
-        raise ValidationError("Invitation token is invalid.")
+    with invitation_token_context(token):
+        invitation = WorkspaceInvitation.objects.select_related("workspace").filter(token=token).first()
+        if invitation is None:
+            raise ValidationError("Invitation token is invalid.")
 
-    if invitation.status != WorkspaceInvitation.Status.PENDING:
-        raise ValidationError("Invitation token has already been used.")
+        if invitation.status != WorkspaceInvitation.Status.PENDING:
+            raise ValidationError("Invitation token has already been used.")
 
-    if invitation.expires_at <= timezone.now():
-        invitation.status = WorkspaceInvitation.Status.EXPIRED
-        invitation.save(update_fields=["status", "updated_at"])
-        raise ValidationError("Invitation token has expired.")
+        if invitation.expires_at <= timezone.now():
+            invitation.status = WorkspaceInvitation.Status.EXPIRED
+            invitation.save(update_fields=["status", "updated_at"])
+            raise ValidationError("Invitation token has expired.")
 
-    actor_email = _normalize_email(getattr(actor, "email", ""))
-    if not actor_email or actor_email != invitation.email:
-        raise PermissionDenied("Invitation email does not match authenticated account email.")
+        actor_email = _normalize_email(getattr(actor, "email", ""))
+        if not actor_email or actor_email != invitation.email:
+            raise PermissionDenied("Invitation email does not match authenticated account email.")
 
-    with transaction.atomic():
-        apply_workspace_context(invitation.workspace_id, local=True)
+        with transaction.atomic():
+            with tenant_context(workspace_id=invitation.workspace_id, local=True):
+                membership, created = WorkspaceMember.objects.get_or_create(
+                    workspace=invitation.workspace,
+                    user=actor,
+                    defaults={
+                        "role": invitation.role,
+                        "status": WorkspaceMember.Status.ACTIVE,
+                        "invited_by": invitation.invited_by,
+                        "joined_at": timezone.now(),
+                    },
+                )
 
-        membership, created = WorkspaceMember.objects.get_or_create(
+                if not created:
+                    membership.role = invitation.role
+                    membership.status = WorkspaceMember.Status.ACTIVE
+                    membership.invited_by = invitation.invited_by
+                    membership.joined_at = membership.joined_at or timezone.now()
+                    membership.save(update_fields=["role", "status", "invited_by", "joined_at", "updated_at"])
+
+                invitation.status = WorkspaceInvitation.Status.ACCEPTED
+                invitation.accepted_by = actor
+                invitation.accepted_at = timezone.now()
+                invitation.save(update_fields=["status", "accepted_by", "accepted_at", "updated_at"])
+
+    with tenant_context(workspace_id=invitation.workspace_id):
+        log_action(
+            actor=actor,
             workspace=invitation.workspace,
-            user=actor,
-            defaults={
-                "role": invitation.role,
-                "status": WorkspaceMember.Status.ACTIVE,
-                "invited_by": invitation.invited_by,
-                "joined_at": timezone.now(),
-            },
+            action="invitation.accepted",
+            target_type="WorkspaceInvitation",
+            target_id=invitation.id,
+            metadata={"email": invitation.email, "membership_user_id": membership.user_id},
         )
-
-        if not created:
-            membership.role = invitation.role
-            membership.status = WorkspaceMember.Status.ACTIVE
-            membership.invited_by = invitation.invited_by
-            membership.joined_at = membership.joined_at or timezone.now()
-            membership.save(update_fields=["role", "status", "invited_by", "joined_at", "updated_at"])
-
-        invitation.status = WorkspaceInvitation.Status.ACCEPTED
-        invitation.accepted_by = actor
-        invitation.accepted_at = timezone.now()
-        invitation.save(update_fields=["status", "accepted_by", "accepted_at", "updated_at"])
-
-    log_action(
-        actor=actor,
-        workspace=invitation.workspace,
-        action="invitation.accepted",
-        target_type="WorkspaceInvitation",
-        target_id=invitation.id,
-        metadata={"email": invitation.email, "membership_user_id": membership.user_id},
-    )
 
     return invitation, membership

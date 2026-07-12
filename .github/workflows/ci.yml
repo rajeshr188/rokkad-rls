@@ -74,8 +74,6 @@ jobs:
             END IF;
 
             ALTER ROLE rls_rokkad_user NOBYPASSRLS;
-            ALTER ROLE rls_rokkad_user CREATEDB;
-            GRANT rls_rokkad_migration_owner TO rls_rokkad_user;
 
             GRANT USAGE, CREATE ON SCHEMA public TO rls_rokkad_migration_owner;
             GRANT USAGE ON SCHEMA public TO rls_rokkad_user;
@@ -114,7 +112,7 @@ jobs:
 
       - name: RLS safety gate (strict)
         run: |
-          python manage.py check_rls
+          python manage.py check_rls --strict-privileges
 
       - name: Smoke tests
         run: |

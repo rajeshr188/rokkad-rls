@@ -60,7 +60,7 @@ try {
 
     if ($IncludeStrictCheck) {
         Write-Host "[extra] Running strict RLS safety check..." -ForegroundColor Yellow
-        & $pythonExe manage.py check_rls
+        & $pythonExe manage.py check_rls --strict-privileges
         if ($LASTEXITCODE -ne 0) {
             Write-Host "Strict check_rls failed. This indicates runtime role ownership/BYPASSRLS drift or policy regression." -ForegroundColor Red
             throw "manage.py check_rls failed with exit code $LASTEXITCODE"

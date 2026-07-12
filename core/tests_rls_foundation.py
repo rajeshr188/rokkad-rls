@@ -17,6 +17,7 @@ from django.test import TransactionTestCase
 from common.models import TenantModel
 from core.db.tenant_registry import TenantModelSpec
 from core.db.tenant_registry import iter_tenant_model_specs
+from core.management.commands.check_rls import Command as CheckRLSCommand
 from notes.models import Note
 
 
@@ -181,6 +182,56 @@ class CheckRLSCommandPositiveControlTests(TransactionTestCase):
             return_value=[safe_spec],
         ):
             call_command("check_rls", "--allow-owned-tables")
+
+
+class CheckRLSPrivilegeModeTests(SimpleTestCase):
+    """Regression tests for strict privilege handling in check_rls."""
+
+    def test_missing_privileges_are_warnings_when_not_strict(self):
+        failures: list[str] = []
+        warnings: list[str] = []
+        missing = CheckRLSCommand._missing_dml_privileges(
+            select_ok=True,
+            insert_ok=False,
+            update_ok=False,
+            delete_ok=True,
+        )
+
+        CheckRLSCommand._record_privilege_findings(
+            label="notes.Note",
+            table_name="notes_note",
+            missing_privileges=missing,
+            strict_privileges=False,
+            failures=failures,
+            warnings=warnings,
+        )
+
+        self.assertEqual(failures, [])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("INSERT, UPDATE", warnings[0])
+
+    def test_missing_privileges_fail_when_strict(self):
+        failures: list[str] = []
+        warnings: list[str] = []
+        missing = CheckRLSCommand._missing_dml_privileges(
+            select_ok=True,
+            insert_ok=True,
+            update_ok=False,
+            delete_ok=False,
+        )
+
+        CheckRLSCommand._record_privilege_findings(
+            label="notes.Note",
+            table_name="notes_note",
+            missing_privileges=missing,
+            strict_privileges=True,
+            failures=failures,
+            warnings=warnings,
+        )
+
+        self.assertEqual(warnings, [])
+        self.assertEqual(len(failures), 1)
+        self.assertIn("UPDATE, DELETE", failures[0])
 
 
 class MakeRLSPoliciesCommandCheckModeTests(SimpleTestCase):
