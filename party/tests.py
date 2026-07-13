@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from allauth.account.models import EmailAddress
+from party.models import PartyAddress, PartyContactMethod, PartyDocument, PartyRole
 from memberships.services import add_member
 from party.services import create_party, delete_party, get_party, list_parties, update_party
 from workspaces.services import create_workspace
@@ -53,15 +54,31 @@ class PartyServiceTests(TestCase):
 
 		self.assertEqual(party.workspace_id, self.workspace_a.id)
 		self.assertEqual(party.party_type, "supplier")
+		self.assertEqual(PartyRole.objects.filter(workspace=self.workspace_a, party=party).count(), 2)
+		self.assertEqual(PartyContactMethod.objects.filter(workspace=self.workspace_a, party=party).count(), 1)
+		self.assertEqual(PartyAddress.objects.filter(workspace=self.workspace_a, party=party).count(), 1)
+		self.assertEqual(PartyDocument.objects.filter(workspace=self.workspace_a, party=party).count(), 1)
 
 		updated = update_party(
 			actor=self.owner_a,
 			workspace=self.workspace_a,
 			party=party,
-			payload={"name": "Sharma Traders LLP", "is_active": False},
+			payload={
+				"name": "Sharma Traders LLP",
+				"is_active": False,
+				"contacts": [
+					{
+						"contact_type": "email",
+						"value": "owner@sharmatraders.example",
+						"is_primary": True,
+					}
+				],
+			},
 		)
 		self.assertEqual(updated.name, "Sharma Traders LLP")
 		self.assertFalse(updated.is_active)
+		self.assertEqual(PartyContactMethod.objects.filter(workspace=self.workspace_a, party=party).count(), 1)
+		self.assertEqual(updated.primary_email, "owner@sharmatraders.example")
 
 	def test_viewer_can_list_but_cannot_create_party(self):
 		create_party(
